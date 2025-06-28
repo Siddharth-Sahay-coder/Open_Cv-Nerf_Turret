@@ -31,6 +31,7 @@ import os
 import time
 import threading
 import queue
+import sys
 
 # ---------- TEST MODE SWITCH ----------
 TEST_MODE = False
@@ -58,6 +59,8 @@ FIRE_DELAY = 0.3    # seconds
 FIRE_ANGLE = 30     # fire position
 REST_ANGLE = 90     # resting servo angle
 STABILITY_THRESHOLD = 5  # number of consistent frames before triggering fire
+TILT_MIN = 30
+TILT_MAX = 30
 
 if not TEST_MODE:
     print("Running in REAL hardware mode (PCA9685 active)")
@@ -83,6 +86,8 @@ def point_servo_to_face(face_center_x, face_center_y, frame_width, frame_height,
     norm_y = face_center_y / frame_height
     pan_angle = 180 * norm_x
     tilt_angle = 180 * norm_y
+    print(f'original tilt angle{tilt_angle}')
+    tilt_angle = max(TILT_MIN,min(TILT_MAX, tilt_angle))
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
     print(f"[TRACKING] {timestamp} | name: {name} | X: {face_center_x}, Y: {face_center_y} | Pan: {pan_angle:.2f}°, Tilt: {tilt_angle:.2f}°")
 
@@ -235,6 +240,9 @@ def process_webcam_mt(known_encodings, known_names):
             except queue.Empty:
                 continue
         cv2.destroyAllWindows()
+        if not TEST_MODE:
+            pca.deinit()
+        sys.exit(0)
 
     threading.Thread(target=process_thread).start()
     threading.Thread(target=display_thread).start()
@@ -326,6 +334,9 @@ def process_webcam_mt_v2(known_encodings, known_names):
             except queue.Empty:
                 continue
         cv2.destroyAllWindows()
+        if not TEST_MODE:
+            pca.deinit()
+        sys.exit(0)
 
     threading.Thread(target=process_thread).start()
     threading.Thread(target=display_thread).start()
